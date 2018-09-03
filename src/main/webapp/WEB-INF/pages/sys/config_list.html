@@ -1,0 +1,253 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">配置管理</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="参数名">
+					
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button>
+							
+							<button type="button" 
+							class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<form>
+				  <table class="table table-hover">
+					<thead>
+						<tr>
+							<th><input type="checkbox" id="checkAll">全选</th>
+							<th>参数名</th>
+							<th>参数值</th>
+							<th>创建日期</th>
+							<th>修改日期</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId">
+					</tbody>
+				  </table>
+				</form>
+			</div>
+			<!-- /.box-body -->
+			<div id="pageId" class="box-footer clearfix">
+              
+            </div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript">
+   //模拟ajax中的load函数
+/*  function load(url){
+	   $.ajax({
+			  url:url,
+			  async:true,
+			  success:function(result){
+				  console.log("success");
+				  $("#pageId").html(result);
+			  }
+	   });
+   } */
+   $(function(){
+	  //load(url,[data],[callback])
+      $("#pageId").load("doPageUI.do",
+    		  function(){//callback
+    	      doGetObjects();
+      });
+	  //当点击table中thead内部的checkbox时
+	  //修改每条记录对应的checkbox状态
+	  //$("#checkAll").change(doChangeCheckAllState);
+	  $("thead").on("change","#checkAll",doChangeTBodyCheckBoxState)
+	  $("tbody").on("change",".cItem",doChangeTHeadCheckBoxState)
+      $("tbody").on("click",".btn-update",doLoadEditUI)
+	  
+	  $(".input-group-btn")
+	  .on("click",".btn-search",doQueryObjects)
+	  .on("click",".btn-delete",doDeleteObjects)
+	  .on("click",".btn-add",doLoadEditUI)
+   });
+   
+   /**加载编辑页面*/
+   function doLoadEditUI(){
+	   var title;
+	   if($(this).hasClass("btn-add")){
+	    title="添加配置信息";
+	   }else{
+		title="修改配置信息"; 
+		//获取当前a标签对应的tr上绑定的数据
+		var rowData=
+		$(this).parents("tr").data("rowData");
+		//将此数据绑定到模态框上
+		$("#myModal").data("rowData",rowData);
+	   }
+	   var url="config/doConfigEditUI.do"
+	   $("#myModal .modal-body").load(url,function(){
+		   $("#myModalLabel").html(title)
+		   //显示模态框
+		   $("#myModal").modal("show");
+	   });
+   }
+   //基于id删除记录
+   function doDeleteObjects(){
+	   //1.获取选中的记录id
+	   var ids=doGetCheckedIds();
+	   if(ids==null||ids.length==0){
+		   alert("请先选中");
+		   return;
+	   }
+	   //2.发送异步请求,执行删除操作
+	   var url="config/doDeleteObjects.do";
+	   var params={"ids":ids.toString()};//1,2,3
+	   //ajax post request
+	   $.post(url,params,function(result){
+		   if(result.state==1){
+			   alert(result.message);
+			   //重新查询,刷新页面
+			   doGetObjects();
+		   }else{
+			   alert(result.message);
+		   }
+	   });
+	   
+	   
+   }
+   function doGetCheckedIds(){
+	   var array=[];
+	   $("#tbodyId input[type='checkbox']")
+	   .each(function(){
+		   if($(this).prop("checked")){
+		      array.push($(this).val())
+		   }
+	   });
+	   return array;
+   }
+   
+   
+   //4W(When,What,Where,Why)+H(how)
+   //点击tbody中checkbox时修改thead中checkbox
+   //对象的状态
+   function doChangeTHeadCheckBoxState(){
+	   var flag=true;
+	   //对tbody中所有checkbox执行&操作获取
+	   //一个最终状态
+	   $("#tbodyId input[type='checkbox']")
+	   .each(function(){
+		   flag=flag&&$(this).prop("checked")
+	   });
+	   //修改全选checkbox的状态值
+	   $("#checkAll").prop("checked",flag);
+   }
+   
+   //执行thead中checkbox的事件处理操作(全选或取消全选)
+   function doChangeTBodyCheckBoxState(){
+	   //获取thead对象中的checkbox状态值
+	   var state=$(this).prop("checked");
+	   //依据thead中checkbox的状态修改tbody中checkbox的状态值
+	  /*$("#tbodyId input[type='checkbox']")
+	   .each(function(){
+		   //修改当前checkbox对象的checkbox属性值
+		   $(this).prop("checked",state);
+	   }); 
+	   */
+	   //简化形式
+	   $("#tbodyId input[type='checkbox']")
+	   .prop("checked",state);
+   }
+   
+   function doQueryObjects(){
+	   //初始化页码值为1
+	   $("#pageId").data("pageCurrent",1);
+	   //执行查询操作(与点击配置管理菜单时触发的方法共用一个方法)
+	   doGetObjects();
+   }
+   function doGetObjects(){
+	   //1.定义参数
+	   var pageCurrent=
+	   $("#pageId").data("pageCurrent");
+	   if(!pageCurrent)pageCurrent=1;
+	   var params={"pageCurrent":pageCurrent};
+	   var name=$("#searchNameId").val();
+	   if(name)params.name=name;
+	   //var params="pageCurrent="+pageCurrent+"&name="+name;
+	   console.log(params);//2
+	   //2.定义url
+	   var url="config/doFindPageObjects.do"
+	   //3.发送异步请求获取服务端数据并输出
+	   $.ajax({
+		   url:url,
+		   data:params,
+		   type:"GET",
+		   dataType:"json",
+		   async:true,
+		   success:function(result){//JsonResult
+		     doHandleResponse(result);
+		   }
+	   });
+   }
+   /*处理客户端的响应*/
+   function doHandleResponse(result){//JsonResult
+	   if(result.state==1){
+		  //设置表格tbody中的内容
+		  doSetTableBodyRows(result.data.records);
+		  //设置分页div中的内容
+		  doSetPagination(result.data);
+	   }else{
+		  alert(result.message);
+	   }
+   }
+   //设置当前页列表数据
+   function doSetTableBodyRows(records){
+	   //1.获取tbody对象并且清空数据
+	   var tBody=$("#tbodyId");
+	   tBody.empty();
+	   //2.迭代records数据并追加到tbody
+	   for(var i in records){
+		 //1)创建tr对象
+		 var tr=$("<tr></tr>");
+		 //修饰时可以直接获取tr对象上绑定的数据
+		 //然后通过此数据初始化页面
+		 tr.data("rowData",records[i]);
+		 //2)创建多个td对象
+		 var tds=createTds(records[i]);
+		 //3)将td对象追加到tr中
+		 tr.append(tds);
+		 //4)将tr对象追加到tbody中
+		 tBody.append(tr);
+	   }
+   }
+   function createTds(row){
+	  var tds=
+      "<td><input type='checkbox' class='cItem' value='"+row.id+"'></td>"
+	  +"<td>"+row.name+"</td>"
+	  +"<td>"+row.value+"</td>"
+	  +"<td>"+new Date(row.createdTime).toLocaleDateString()+"</td>"
+	  +"<td>"+new Date(row.modifiedTime).toLocaleDateString()+"</td>"
+	  +"<td><a class='btn-update'>修改</a></td>";
+	  return tds;
+   }
+   
+   
+</script>
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,192 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">菜单管理</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 100px;">
+						<div class="input-group-btn">
+						
+							<button type="button" 
+							class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+							<button type="button" class="btn btn-default btn-update">修改</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+		<div class="box-body table-responsive no-padding">
+          <table id="menuTable" class="table table-hover">
+           <thead>
+	        <tr>
+		      <th data-field="selectItem" data-checkbox="true"></th>
+	        </tr>
+	       </thead>
+         </table>
+        </div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.extension.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.min.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/tree.table.js"></script>
+<script type="text/javascript">
+/**
+ * 初始化表格的列
+ */
+var columns = [
+{
+	field : 'selectItem',
+	radio : true
+},
+{
+	title : '菜单ID',
+	field : 'id',
+	visible : false,
+	align : 'center',
+	valign : 'middle',
+	width : '80px'
+},
+{
+	title : '菜单名称',
+	field : 'name',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '130px'
+},
+{
+	title : '上级菜单',
+	field : 'parentName',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '100px'
+},
+{
+	title : '类型',
+	field : 'type',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '70px',
+	formatter : function(item, index) {
+		if (item.type == 1) {
+			return '<span class="label label-success">菜单</span>';
+		}
+		if (item.type == 2) {
+			return '<span class="label label-warning">按钮</span>';
+		}
+	}
+}, 
+{
+	title : '排序号',
+	field : 'sort',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '70px'
+}, 
+{
+	title : '菜单URL',
+	field : 'url',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '160px'
+}, 
+{
+	title : '授权标识',
+	field : 'permission',
+	align : 'center',
+	valign : 'middle',
+	sortable : true
+} ];
+//$(document).ready(function(){})
+$(function(){
+	doGetObjects();
+	$(".input-group-btn")
+    .on("click",'.btn-delete',doDeleteObject)
+    .on("click",'.btn-add,.btn-update',doLoadEditUI)
+});
+
+function doLoadEditUI(){
+	var title;
+	//1.定义页面标题
+	if($(this).hasClass("btn-add")){
+	  title="添加菜单";
+	}else{
+	  title="修改菜单"
+	  //获得选中的input对象
+	  var input=$("tbody input[type='radio']:checked");
+	  //获得当前行绑定的数据
+	  var rowData=input.parents("tr").data("rowData");
+	  console.log(rowData);
+	  $("#mainContentId").data("rowData",rowData);
+	}
+	//2.异步加载编辑页面
+	var url="menu/doMenuEditUI.do";
+	$("#mainContentId")
+	.load(url,function(){
+		$(".box-title").html(title);
+	})
+}
+
+
+function doDeleteObject(){
+	//1.获取用户选中的菜单id
+	var id=doGetCheckedId();
+	//2.对结果进行验证
+	if(!id){
+		alert("请先选择一个");
+		return;
+	}
+	//3.发送异步请求执行删除操作
+	var url="menu/doDeleteObject.do";
+	var params={"id":id};
+	console.log(params);
+	$.post(url,params,function(result){
+		if(result.state==1){
+			alert(result.message);
+			//刷新页面
+			doGetObjects();
+		}else{
+			alert(result.message);
+		}
+	});
+}
+//获取选中的记录ID
+function doGetCheckedId(){
+	//1.获取选中的对象
+	var nodes=$("#menuTable")
+	.bootstrapTreeTable("getSelections");
+	console.log(nodes)
+	//2.获取选中对象的id
+	if(nodes.length==1)
+	return nodes[0].id;
+}
+
+function doGetObjects(){
+  //1.构建TreeTable对象(treeGrid插件提供)
+  var treeTable=
+  new TreeTable("menuTable",//tablId
+		 "menu/doFindObjects.do", //url
+		  columns);//table columns 
+  //treeTable.setExpandColumn(2);
+  //2.初始化treeTable,此时底层会发异步请求
+  treeTable.init();
+}
+
+
+
+</script>
+
+
+
+
+
+
+

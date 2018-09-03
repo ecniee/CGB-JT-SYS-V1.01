@@ -1,0 +1,99 @@
+<!-- Horizontal Form -->
+ <div class="box box-info">
+      <!-- form start -->
+      <form class="form-horizontal">
+        <div class="box-body">
+          <div class="form-group">
+            <label for="nameId" class="col-sm-2 control-label">参数名</label>
+
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="nameId" placeholder="名称">
+            </div>
+          </div>
+           <div class="form-group">
+            <label for="valueId" class="col-sm-2 control-label">参数值</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="valueId" placeholder="名称">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="noteId" class="col-sm-2 control-label">描述</label>
+
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="note" id="noteId" placeholder="描述">
+            </div>
+          </div>
+        </div>
+        <!-- /.box-body -->
+      </form>
+</div>
+<script type="text/javascript">
+  $(function(){
+	  //模态框的保存按钮上注册click事件
+	 $("#myModal")
+	 .on("click",".btn-save",doSaveOrUpdate);
+	  //注册模态框隐藏事件,当模态隐藏时执行相关事件处理
+      //如下代码可参考模态框事件处理
+	  $('#myModal').on('hidden.bs.modal',function (e) {
+    	 //移除模态框上绑定的事件
+    	 //off函数与on函数对应,都属于jquery函数
+    	 $("#myModal").off();
+    	 $("#myModal").removeData();
+      });//不解绑事件可能会有重复提交的问题
+      //获取模态框绑定的数据
+      var rowData=$("#myModal").data("rowData");
+      //假如模态框上有绑定数据,通过此数据初始化页面表单内容
+      if(rowData)doInitEditFormData(rowData);
+  });
+  //初始化表单数据
+  function doInitEditFormData(rowData){
+	  $("#nameId").val(rowData.name);
+	  $("#valueId").val(rowData.value);
+	  $("#noteId").val(rowData.note);
+  }
+  function doSaveOrUpdate(){
+	 //1.获取表单数据
+	 var params=doGetEditFormData();
+	 //2.定义url
+	 var url="config/doSaveObject.do";
+	 //3.异步提交url
+	 $.post(url,params,function(result){
+		 if(result.state==1){
+			 alert(result.message);
+			 doGetObjects();
+			 $("#myModal").modal("hide");
+		 }else{
+			 alert(result.message);
+		 }
+	 });
+  }
+  //获取表单数据
+  function doGetEditFormData(){
+	  var params={
+		  name:$("#nameId").val(),
+		  value:$("#valueId").val(),
+		  note:$("#noteId").val()
+	  }//key一定要与控制层对象方法中实体对象的set方法名字相同
+	  return params;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    
+    
+    
